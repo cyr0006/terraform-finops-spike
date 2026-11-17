@@ -16,9 +16,9 @@ data "aws_ami" "amazon_linux" {
 
 resource "aws_instance" "spike" {
   ami           = data.aws_ami.amazon_linux.id
-  instance_type = "t3.micro"
+  instance_type = var.instance_type
 
   tags = {
-    Name = "terraform-spike"
+    Name = var.instance_name
   }
 }
