@@ -1,19 +1,24 @@
-data "aws_ami" "ubuntu" {
+# Get the latest Amazon Linux 2023 AMI
+data "aws_ami" "amazon_linux" {
   most_recent = true
+  owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu=noble-24.04-amd64-server-*"]
+    values = ["al2023-ami-*-x86_64"]
   }
 
-  owners = ["099720109477"] # Canonical
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
 }
 
-resource "aws_instance" "app_server" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t2.micro"
+resource "aws_instance" "spike" {
+  ami           = data.aws_ami.amazon_linux.id
+  instance_type = "t3.micro"
 
   tags = {
-    name = "learn-terraform"
+    Name = "terraform-spike"
   }
 }
