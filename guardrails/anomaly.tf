@@ -22,6 +22,5 @@ resource "aws_ce_anomaly_subscription" "alerts" {
       match_options = ["GREATER_THAN_OR_EQUAL"]
       values        = ["1"]
     }
-
   }
 }
