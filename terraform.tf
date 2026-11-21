@@ -7,7 +7,15 @@ terraform {
   }
 
   # Specify the required version of Terraform itself
-  required_version = ">= 1.2"
+  required_version = ">= 1.10"
+
+  backend "s3" {
+    bucket       = "finops-spike-tfstate-502869772083"
+    key          = "finops-spike/main/terraform.tfstate" # path inside the bucket
+    region       = "ap-southeast-2"
+    encrypt      = true
+    use_lockfile = true
+  }
 }
 
 provider "aws" {

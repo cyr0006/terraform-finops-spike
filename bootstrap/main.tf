@@ -1,7 +1,7 @@
-data "aws_caller_identity" "current" {} # looks up your account ID
+data "aws_caller_identity" "current" {} # looks up account ID
 
 resource "aws_s3_bucket" "state" {
-  # Account ID makes the name unique and predictable (common enterprise convention)
+  # Account ID makes the name unique as per enterprise cnvention
   bucket = "finops-spike-tfstate-${data.aws_caller_identity.current.account_id}"
 
   lifecycle {
@@ -12,7 +12,7 @@ resource "aws_s3_bucket" "state" {
 resource "aws_s3_bucket_versioning" "state" {
   bucket = aws_s3_bucket.state.id
   versioning_configuration {
-    status = "Enabled" # every state change is kept; you can roll back a bad one
+    status = "Enabled" # every state change is kept; can roll back a bad one
   }
 }
 
