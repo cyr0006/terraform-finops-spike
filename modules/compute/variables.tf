@@ -30,3 +30,9 @@ variable "associate_public_ip" {
   type        = bool
   default     = false
 }
+
+variable "availability_zone" {
+  description = "AZ to launch the instance in (uses that AZ's default subnet)"
+  type        = string
+  default     = "ap-southeast-2a"
+}

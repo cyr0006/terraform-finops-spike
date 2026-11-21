@@ -13,10 +13,16 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
+data "aws_subnet" "default" {
+  availability_zone = var.availability_zone
+  default_for_az    = true
+}
+
 resource "aws_instance" "this" {
   ami                         = data.aws_ami.amazon_linux.id
   instance_type               = var.instance_type
   associate_public_ip_address = var.associate_public_ip
+  subnet_id                   = data.aws_subnet.default.id
 
   root_block_device {
     volume_type           = "gp3"
