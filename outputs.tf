@@ -1,4 +1,4 @@
-output "instance_hostname" {
-  description = "Private DNS Name of the EC2 Instance."
-  value       = aws_instance.spike.private_dns
+output "bucket_name" {
+  description = "The name of the S3 bucket."
+  value       = module.storage.bucket_name
 }
