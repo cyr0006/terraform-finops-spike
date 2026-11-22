@@ -7,6 +7,8 @@ It creates:
 - A VPC in the Sydney region (`ap-southeast-2`) with two public and two private subnets, using the community [VPC module](https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws)
 - One EC2 instance running the latest Amazon Linux 2023, placed in the first public subnet
 
+See [docs/DECISIONS.md](docs/DECISIONS.md) for the problems I hit and the design decisions behind this project.
+
 ## Files
 
 | File | Purpose |
