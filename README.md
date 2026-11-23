@@ -4,6 +4,8 @@ A small Terraform project on AWS that builds FinOps (cloud cost management) prac
 
 It started from HashiCorp's "Get Started - AWS" tutorial and grew from there. See [docs/DECISIONS.md](docs/DECISIONS.md) for the problems I hit and the reasoning behind each design choice.
 
+**Status (23 Nov 2026):** the spike is finished. The main project (EC2 and S3) has been destroyed. The guardrails (free) and the state bucket (a few cents a month) are kept. Running `terraform apply` in the root rebuilds the main project.
+
 ## What it builds
 
 The project is split into three Terraform roots. Each has its own state, so they can be created and destroyed separately.
@@ -114,7 +116,7 @@ The compute module also has `root_volume_size_gb` (default 8, allowed 8 to 20), 
 
 ## Cost
 
-Infracost estimate for the main project:
+### Estimate (Infracost)
 
 | Resource | Monthly |
 |---|---|
@@ -123,7 +125,37 @@ Infracost estimate for the main project:
 | S3 buckets | depends on usage, close to $0 here |
 | **Total** | **about $8.50** |
 
-The budget and anomaly monitor are free. The EC2 instance is billed for as long as it runs, so destroy it when you are done.
+The budget and anomaly monitor are free.
+
+### What it actually cost
+
+From Cost Explorer, 17 to 23 Nov 2026, unblended cost with credits excluded:
+
+| Usage type | Cost | What it is |
+|---|---|---|
+| `APS2-BoxUsage:t3.micro` | $0.230 | x86 instance, before rightsizing |
+| `APS2-BoxUsage:t4g.micro` | $0.117 | Graviton instance, after rightsizing |
+| `APS2-EBS:VolumeUsage.gp3` | $0.037 | Root volumes |
+| `APS2-PublicIPv4:InUseAddress` | $0.012 | Public IP addresses (see incident I2) |
+| `Requests-Tier1` / `Tier2` | about $0.0005 | S3 requests, including state file reads and writes |
+| **Total** | **about $0.40** | |
+
+Amount actually paid: **$0**, because promotional credits covered all of it. The last day's data was still arriving when these figures were taken, so the final total may be slightly higher.
+
+![Cost Explorer by usage type](docs/cost-explorer-by-usage-type.png)
+
+The graph shows the rightsizing on 22 Nov, where `t3.micro` drops and `t4g.micro` takes over. It also shows a public IPv4 charge on 17 Nov from the original tutorial instance.
+
+### Estimate vs. actual
+
+Infracost got the hourly prices right, but it cannot know:
+
+- **How long things run.** It assumes 730 hours a month; the spike ran for a few days.
+- **What happens at runtime.** Public IPv4 addresses, data transfer and S3 requests depend on behaviour, not code.
+- **Mistakes.** The public IP from incident I2 was never in the code's intent, so no estimate would include it.
+- **Reporting delay.** Cost Explorer data lags by up to a day, so recent days look lower than they are.
+
+Estimates are best for comparing changes before they ship. Actual spend is needed to see what really happened.
 
 ## Infracost
 
@@ -144,6 +176,17 @@ Two GitHub Actions workflows were generated with `infracost ci setup --pipeline`
 Both need an Infracost API key stored as the GitHub secret `INFRACOST_API_KEY`.
 
 **Known issue:** Infracost 2.20 hangs on any project that contains a `terraform.tfvars` file (here, `guardrails/`). Locally, move the file out of the repo while scanning. In CI this does not happen, because the file is not committed.
+
+## What I learned
+
+- **State** maps the code to real AWS resources. Lose it and Terraform creates duplicates and leaves orphans that keep billing.
+- **Locking** stops two runs from changing the same state at once. S3 can now do this natively (`use_lockfile`); teams used DynamoDB for it before 2024.
+- **Modules** package resources with their settings built in, so cost and security rules are written once and reused.
+- **`default_tags` and cost allocation tags:** tagging every resource is easy with `default_tags`, but costs are only grouped by tag after the tags are activated in Billing, and only from that point on. In an AWS Organization, only the management account can activate them.
+- **Budgets as code:** budgets and alerts live in version control and are reviewed like any other change.
+- **Credits vs. real cost:** credits made every report show $0. Measuring cost before credits is the only way to see real usage.
+- **Anomaly detection** watches for unusual patterns per service, which a fixed budget cannot do. It needs about 10 days of history first.
+- **Shift-left cost estimation:** Infracost shows the cost of a change before it is applied, and in CI it comments the cost change on each pull request.
 
 ## Teardown
 
